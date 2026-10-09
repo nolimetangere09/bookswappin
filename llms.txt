@@ -1,0 +1,14 @@
+# Bookswappin’ BCN
+
+> A free book-swap community in Barcelona. Members add books they’ve finished to a shared online shelf and swap, lend or give them away, arranging meetups through a WhatsApp group. No ads, nothing to pay.
+
+- Swap: give a book and get one back. Lend: get it back once it’s read. Give away: theirs to keep.
+- Books in English, Spanish, Catalan and other languages, across Barcelona and nearby towns.
+- Run by members of the group, for the group.
+
+## Pages
+
+- [About](https://bookswappin.com/about/): what it is and how it works
+- [FAQ](https://bookswappin.com/faq/): common questions, in English
+- [En español](https://bookswappin.com/es/): qué es y preguntas frecuentes
+- [The shelf](https://bookswappin.com/): the live site with all the books
