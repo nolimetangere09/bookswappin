@@ -34,7 +34,12 @@
 <body>
 <iframe id="app" title="Bookswappin’ BCN" allow="clipboard-write; web-share; camera"></iframe>
 <script>
-  document.getElementById('app').src = 'https://script.google.com/macros/s/AKfycbx2CEBslK1M_8V6O5fmsDIwkzRkIaBqTNRzLyoqWD_SYh_xMehpDR8h-qJBr_pplXY8/exec' + location.search;
+  // Tells the site which website sent the visitor and if it was opened as a home screen app (for the admin stats)
+  var q = new URLSearchParams(location.search);
+  try { var r = document.referrer ? new URL(document.referrer).hostname : ''; if (r && r.indexOf('bookswappin') < 0) q.set('ref', r); } catch (e) {}
+  try { if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) q.set('app', '1'); } catch (e) {}
+  var qs = q.toString();
+  document.getElementById('app').src = 'https://script.google.com/macros/s/AKfycbx2CEBslK1M_8V6O5fmsDIwkzRkIaBqTNRzLyoqWD_SYh_xMehpDR8h-qJBr_pplXY8/exec' + (qs ? '?' + qs : '');
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
