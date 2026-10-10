@@ -61,6 +61,15 @@
   setTimeout(done, 10000);
   document.getElementById('app').src = 'https://script.google.com/macros/s/AKfycbx2CEBslK1M_8V6O5fmsDIwkzRkIaBqTNRzLyoqWD_SYh_xMehpDR8h-qJBr_pplXY8/exec' + (qs ? '?' + qs : '');
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Keeps a copy of the sign-in for the site, so people stay signed in when a new version goes live
+  window.addEventListener('message', function (e) {
+    if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(e.origin)) return;
+    var d = e.data || {};
+    try {
+      if (d.bsw === 'me') { if (d.me) localStorage.setItem('bsw_me', d.me); else localStorage.removeItem('bsw_me'); }
+      if (d.bsw === 'get' && e.source) e.source.postMessage({ bsw: 'me', me: localStorage.getItem('bsw_me') }, e.origin);
+    } catch (err) {}
+  });
 </script>
 </body>
 </html>
