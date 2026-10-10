@@ -33,6 +33,11 @@
 <style>
   html, body { margin: 0; height: 100%; background: #E7E7DD; overflow: hidden; }
   iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  #load { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #E7E7DD; color: #64675F; font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: opacity .3s; }
+  #load img { width: 64px; height: 64px; animation: bob 1.2s ease-in-out infinite; }
+  #load.gone { opacity: 0; pointer-events: none; }
+  @keyframes bob { 50% { transform: translateY(-6px) rotate(-6deg); } }
+  @media (prefers-reduced-motion: reduce) { #load img { animation: none; } }
 </style>
 </head>
 <body>
@@ -41,6 +46,7 @@
   <p>A free shelf for our WhatsApp book community in Barcelona. Add the books you’ve finished, then swap, lend or give them away. This site needs JavaScript to show the books.</p>
   <p><a href="/about/">About</a> · <a href="/faq/">FAQ</a> · <a href="/es/">En español</a></p>
 </noscript>
+<div id="load" aria-hidden="true"><img src="favicon.svg" alt="" width="64" height="64"><span>Opening the shelf…</span></div>
 <iframe id="app" title="Bookswappin’ BCN" allow="clipboard-write; web-share; camera"></iframe>
 <script>
   // Tells the site which website sent the visitor and if it was opened as a home screen app (for the admin stats)
@@ -48,6 +54,11 @@
   try { var r = document.referrer ? new URL(document.referrer).hostname : ''; if (r && r.indexOf('bookswappin') < 0) q.set('ref', r); } catch (e) {}
   try { if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) q.set('app', '1'); } catch (e) {}
   var qs = q.toString();
+  // Hides the loading screen once the site has loaded (or after 10 seconds, just in case)
+  var app = document.getElementById('app'), load = document.getElementById('load');
+  function done() { load.className = 'gone'; setTimeout(function () { load.remove(); }, 400); }
+  app.addEventListener('load', done, { once: true });
+  setTimeout(done, 10000);
   document.getElementById('app').src = 'https://script.google.com/macros/s/AKfycbx2CEBslK1M_8V6O5fmsDIwkzRkIaBqTNRzLyoqWD_SYh_xMehpDR8h-qJBr_pplXY8/exec' + (qs ? '?' + qs : '');
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
