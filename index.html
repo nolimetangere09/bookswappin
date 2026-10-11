@@ -52,7 +52,13 @@
   // Tells the site which website sent the visitor and if it was opened as a home screen app (for the admin stats)
   var q = new URLSearchParams(location.search);
   try { var r = document.referrer ? new URL(document.referrer).hostname : ''; if (r && r.indexOf('bookswappin') < 0) q.set('ref', r); } catch (e) {}
-  try { if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) q.set('app', '1'); } catch (e) {}
+  try {
+    if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+      q.set('app', '1');
+      // The first time the home screen app opens on this phone counts as an install (for the admin stats)
+      if (!localStorage.getItem('bsw_app')) { localStorage.setItem('bsw_app', '1'); q.set('inst', '1'); }
+    }
+  } catch (e) {}
   var qs = q.toString();
   var app = document.getElementById('app'), load = document.getElementById('load');
   // The site says when the shelf is on screen; until then the loading screen stays (at most 12 seconds, just in case)
