@@ -45,30 +45,28 @@
   #cam { position: fixed; inset: 0; z-index: 5; background: #101922; color: #F7F7F2; font: 15px/1.4 Inter, -apple-system, system-ui, sans-serif; overflow: hidden; }
   #cam[hidden] { display: none; }
   #cam video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-  #camFrame { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: min(74vw, 46vh); aspect-ratio: 2 / 3; border-radius: 14px; box-shadow: 0 0 0 200vmax rgba(16, 25, 34, .62); border: 2px solid rgba(247, 247, 242, .55); box-sizing: border-box; transition: border-color .2s; }
-  #camFrame i { position: absolute; width: 34px; height: 34px; border: 4px solid #E19FC3; transition: border-color .2s; }
-  #camFrame.ok { border-color: #3E7A5B; }
-  #camFrame.ok i { border-color: #3E7A5B; }
+  #camFrame { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: min(74vw, 46vh); aspect-ratio: 2 / 3; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(16, 25, 34, .62); border: 2px solid rgba(247, 247, 242, .55); box-sizing: border-box; }
+  /* The pink corners are the same rounded box as the outline, drawn 4px thick and shown only near the corners */
+  #camFrame::after { content: ''; position: absolute; inset: -2px; border-radius: 16px; border: 4px solid #E19FC3; transition: border-color .2s; pointer-events: none;
+    -webkit-mask: linear-gradient(#000, #000) 0 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 0 100% / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 100% / 40px 40px no-repeat;
+    mask: linear-gradient(#000, #000) 0 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 0 100% / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 100% / 40px 40px no-repeat; }
+  #camFrame.ok { border-color: rgba(62, 122, 91, .8); }
+  #camFrame.ok::after { border-color: #3E7A5B; }
   #camTip b { transition: color .2s; }
   #camTip.ok b { color: #9ED3B1; }
-  #camFrame i:nth-child(1) { left: -3px; top: -3px; border-right: 0; border-bottom: 0; border-top-left-radius: 14px; }
-  #camFrame i:nth-child(2) { right: -3px; top: -3px; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
-  #camFrame i:nth-child(3) { left: -3px; bottom: -3px; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
-  #camFrame i:nth-child(4) { right: -3px; bottom: -3px; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
   #camTip { position: absolute; left: 0; right: 0; top: max(22px, env(safe-area-inset-top)); padding: 0 24px; text-align: center; }
   #camTip b { display: block; font-size: 18px; font-weight: 600; }
   #camTip span { display: block; margin-top: 4px; color: rgba(247, 247, 242, .75); font-size: 14px; }
   #camBar { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 24px max(26px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 76px 1fr; align-items: center; justify-items: center; }
-  #camBar button, #camBar label { border: 0; background: none; color: #F7F7F2; font: inherit; font-weight: 600; cursor: pointer; padding: 10px 6px; }
+  #camBar button, #camBar label { border: 0; background: none; color: #F7F7F2; font: inherit; font-weight: 600; cursor: pointer; padding: 10px 6px; display: inline-flex; align-items: center; gap: 7px; }
+  #camBar svg { width: 20px; height: 20px; }
   #camBar input { display: none; }
-  #camShot { width: 76px; height: 76px; border-radius: 50%; padding: 0 !important; background: none; border: 4px solid #F7F7F2 !important; display: grid; place-items: center; }
+  #camShot { width: 76px; height: 76px; border-radius: 50%; padding: 0 !important; background: none; border: 4px solid #F7F7F2 !important; display: grid !important; place-items: center; }
   #camShot::after { content: ''; width: 60px; height: 60px; border-radius: 50%; background: #F7F7F2; transition: transform .15s; }
   #camShot:active::after { transform: scale(.88); }
   #camFlash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
   #camFlash.go { animation: camFlash .35s ease-out; }
   @keyframes camFlash { 0% { opacity: .85; } 100% { opacity: 0; } }
-  #camBox { position: absolute; border: 2px dashed #D4603A; pointer-events: none; display: none; }
-  #camBox b { position: absolute; left: 0; top: -20px; font-size: 12px; color: #D4603A; white-space: nowrap; }
   #camLoad { position: absolute; left: 50%; top: calc(46% + min(55.5vw, 34.5vh) + 16px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 999px; background: rgba(16, 25, 34, .72); color: rgba(247, 247, 242, .9); font-size: 13px; white-space: nowrap; }
   #camLoad[hidden] { display: none; }
   #camLoad i { width: 14px; height: 14px; border: 2px solid rgba(247, 247, 242, .35); border-top-color: #E19FC3; border-radius: 50%; animation: camSpin .8s linear infinite; }
@@ -86,13 +84,12 @@
 <iframe id="app" title="Bookswappin’ BCN" allow="clipboard-write; web-share; camera"></iframe>
 <div id="cam" hidden role="dialog" aria-label="Take a photo of the cover">
   <video id="camVideo" playsinline muted autoplay></video>
-  <div id="camFrame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <div id="camFrame" aria-hidden="true"></div>
   <div id="camTip"><b>Fit the cover inside the frame</b><span>Lay the book flat, in good light</span></div>
-  <div id="camBox"><b></b></div>
   <div id="camLoad" hidden><i></i>Getting the smart guide ready…</div>
   <p id="camMsg" hidden></p>
   <div id="camFlash"></div>
-  <div id="camBar"><button type="button" id="camCancel">Cancel</button><button type="button" id="camShot" aria-label="Take the photo"></button><label>Gallery<input type="file" id="camFile" accept="image/*"></label></div>
+  <div id="camBar"><button type="button" id="camCancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Cancel</button><button type="button" id="camShot" aria-label="Take the photo"></button><label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Gallery<input type="file" id="camFile" accept="image/*"></label></div>
 </div>
 <script>
   // Tells the site which website sent the visitor and if it was opened as a home screen app (for the admin stats)
@@ -133,13 +130,6 @@
     // Live guidance: a small AI model that recognises books runs on the phone and compares the book to the frame.
     // It only gives advice: the shutter always works.
     var model = null, modelP = null, loopT = 0, probe = document.createElement('canvas');
-    var debug = /[?&]camdebug=1/.test(location.search), box = document.getElementById('camBox');
-    function showBox(b, label) {
-      if (!debug) return;
-      if (!b) { box.style.display = 'none'; return; }
-      box.style.display = 'block'; box.style.left = b.x + 'px'; box.style.top = b.y + 'px'; box.style.width = b.w + 'px'; box.style.height = b.h + 'px';
-      box.querySelector('b').textContent = label;
-    }
     function addScript(src) { return new Promise(function (ok, no) { var el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = no; document.head.appendChild(el); }); }
     function loadModel() {
       var ld = document.getElementById('camLoad');
@@ -168,7 +158,7 @@
       for (var i = 0; i < px.length; i += 4) lum += px[i] * .299 + px[i + 1] * .587 + px[i + 2] * .114;
       lum /= px.length / 4;
       if (lum < 45) { tip('Too dark', 'Find a bit more light'); loopT = setTimeout(guide, 400); return; }
-      if (!model) { tip('Fit the cover inside the frame', debug ? (modelP ? 'AI: loading…' : 'AI: could not load') : 'Lay the book flat, in good light'); loopT = setTimeout(guide, 400); return; }
+      if (!model) { tip('Fit the cover inside the frame', 'Lay the book flat, in good light'); loopT = setTimeout(guide, 400); return; }
       model.detect(video, 5, 0.3).then(function (list) {
         if (cam.hidden) return;
         var fx = r.left, fy = r.top, fw = r.width, fh = r.height, best = null, bestIn = 0;
@@ -178,8 +168,7 @@
           var ix = Math.max(0, Math.min(x + w, fx + fw) - Math.max(x, fx)), iy = Math.max(0, Math.min(y + h, fy + fh) - Math.max(y, fy));
           if (ix * iy > bestIn) { bestIn = ix * iy; best = { x: x, y: y, w: w, h: h }; }
         });
-        showBox(best, best ? 'book ' + Math.round(bestIn / (fw * fh) * 100) + '% of frame' : '');
-        if (!best) tip('Fit the cover inside the frame', debug ? 'AI: no book seen (' + list.map(function (p) { return p.class; }).join(', ') + ')' : 'Lay the book flat, in good light');
+        if (!best) tip('Fit the cover inside the frame', 'Lay the book flat, in good light');
         else {
           var fill = bestIn / (fw * fh), big = (best.w * best.h) / (fw * fh);
           var dx = Math.abs(best.x + best.w / 2 - (fx + fw / 2)) / fw, dy = Math.abs(best.y + best.h / 2 - (fy + fh / 2)) / fh;
