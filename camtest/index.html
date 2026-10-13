@@ -202,13 +202,35 @@
       tip('Fit the cover inside the frame', 'Lay the book flat, in good light');
       loadModel(); clearTimeout(loopT); loopT = setTimeout(guide, 500);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return blocked();
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1080 }, height: { ideal: 1920 }, aspectRatio: { ideal: 9 / 16 } }, audio: false })
-        .then(function (s) {
+      // Phones answer the same request differently: some give an upright picture, some a sideways one.
+      // Try a few ways of asking, keep the first that gives an upright picture, and remember it for next time.
+      var tries = [
+        { width: { ideal: 1920 }, height: { ideal: 1080 } },
+        { width: { ideal: 1080 }, height: { ideal: 1920 } },
+        { width: { ideal: 1920 }, height: { ideal: 1440 } },
+        { width: { ideal: 1440 }, height: { ideal: 1920 } },
+        {}
+      ], start = 0, best = null;
+      try { start = Math.min(tries.length - 1, parseInt(localStorage.getItem('bswCam') || '0', 10) || 0); } catch (e) {}
+      function stopAll(s) { s.getTracks().forEach(function (t) { t.stop(); }); }
+      function attempt(i) {
+        if (i >= tries.length) { i = best ? best.i : 0; }
+        var c = Object.assign({ facingMode: { ideal: 'environment' } }, tries[i]);
+        return navigator.mediaDevices.getUserMedia({ video: c, audio: false }).then(function (s) {
+          if (cam.hidden) { stopAll(s); return; }
           stream = s; video.srcObject = s;
-          try { var tr = s.getVideoTracks()[0], caps = tr.getCapabilities ? tr.getCapabilities() : {}; if (caps.zoom) tr.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] }).catch(function () {}); } catch (e) {}
-          return video.play();
-        })
-        .catch(blocked);
+          return new Promise(function (ok) { video.onloadedmetadata = function () { ok(); }; setTimeout(ok, 1500); }).then(function () {
+            var vw = video.videoWidth || 1, vh = video.videoHeight || 1, done = vh > vw || (best && best.i === i);
+            if (!done && (!best || vh / vw > best.r)) best = { i: i, r: vh / vw };
+            if (!done) { stopAll(s); stream = null; return attempt(i + 1); }
+            try { localStorage.setItem('bswCam', String(i)); } catch (e) {}
+            try { var tr = s.getVideoTracks()[0], caps = tr.getCapabilities ? tr.getCapabilities() : {}; if (caps.zoom) tr.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] }).catch(function () {}); } catch (e) {}
+            layout();
+            return video.play();
+          });
+        });
+      }
+      attempt(start).catch(blocked);
     }
     function blocked() {
       var m = document.getElementById('camMsg');
