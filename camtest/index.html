@@ -159,14 +159,15 @@
     var box = { left: 0, top: 0, w: 0, h: 0 };
     function layout() {
       var vw = video.videoWidth, vh = video.videoHeight; if (!vw || !vh) return;
-      var W = cam.clientWidth, H = cam.clientHeight, avail = H - document.getElementById('camBar').offsetHeight;
-      var bw = W, bh = W * vh / vw; if (bh > avail) { bh = avail; bw = bh * vw / vh; }
-      box = { left: (W - bw) / 2, top: (avail - bh) / 2, w: bw, h: bh };
-      video.style.cssText = 'left:' + box.left + 'px;top:' + box.top + 'px;width:' + bw + 'px;height:' + bh + 'px';
-      var fw = Math.min(bw * .76, bh * .66 / 1.5), fh = fw * 1.5;
-      frame.style.cssText = 'left:' + (box.left + (bw - fw) / 2) + 'px;top:' + (box.top + (bh - fh) / 2) + 'px;width:' + fw + 'px;height:' + fh + 'px';
+      // Always edge to edge, like a story camera; the buttons sit over the bottom if the picture is tall
+      var W = cam.clientWidth, H = cam.clientHeight, barH = document.getElementById('camBar').offsetHeight;
+      var bw = W, bh = W * vh / vw, top = Math.max(0, Math.min((H - barH - bh) / 2, (H - bh) / 2));
+      box = { left: 0, top: top, w: bw, h: bh };
+      video.style.cssText = 'left:0;top:' + box.top + 'px;width:' + bw + 'px;height:' + bh + 'px;border-radius:' + (bh >= H ? 0 : 18) + 'px';
+      var room = Math.min(box.top + bh, H - barH) - box.top, fw = Math.min(bw * .76, room * .66 / 1.5), fh = fw * 1.5;
+      frame.style.cssText = 'left:' + ((bw - fw) / 2) + 'px;top:' + (box.top + (room - fh) / 2) + 'px;width:' + fw + 'px;height:' + fh + 'px';
       document.getElementById('camTip').style.top = (box.top + 22) + 'px';
-      document.getElementById('camLoad').style.top = (box.top + (bh + fh) / 2 + 14) + 'px';
+      document.getElementById('camLoad').style.top = (box.top + (room + fh) / 2 + 14) + 'px';
     }
     video.addEventListener('loadedmetadata', layout); window.addEventListener('resize', layout);
     function guide() {
