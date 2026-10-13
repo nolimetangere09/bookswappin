@@ -44,8 +44,8 @@
   @font-face { font-family: 'Inter'; font-weight: 600; src: url(../fonts/inter-latin-600-normal.woff2) format('woff2'); }
   #cam { position: fixed; inset: 0; z-index: 5; background: #101922; color: #F7F7F2; font: 15px/1.4 Inter, -apple-system, system-ui, sans-serif; overflow: hidden; }
   #cam[hidden] { display: none; }
-  #cam video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  #camFrame { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: min(74vw, 46vh); aspect-ratio: 2 / 3; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(16, 25, 34, .62); border: 2px solid rgba(247, 247, 242, .55); box-sizing: border-box; }
+  #cam video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  #camFrame { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); height: var(--fh, 60vh); aspect-ratio: 2 / 3; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(16, 25, 34, .62); border: 2px solid rgba(247, 247, 242, .55); box-sizing: border-box; }
   /* The pink corners are the same rounded box as the outline, drawn 4px thick and shown only near the corners */
   #camFrame::after { content: ''; position: absolute; inset: -2px; border-radius: 16px; border: 4px solid #E19FC3; transition: border-color .2s; pointer-events: none;
     -webkit-mask: linear-gradient(#000, #000) 0 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 0 100% / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 100% / 40px 40px no-repeat;
@@ -67,7 +67,7 @@
   #camFlash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
   #camFlash.go { animation: camFlash .35s ease-out; }
   @keyframes camFlash { 0% { opacity: .85; } 100% { opacity: 0; } }
-  #camLoad { position: absolute; left: 50%; top: calc(46% + min(55.5vw, 34.5vh) + 16px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 999px; background: rgba(16, 25, 34, .72); color: rgba(247, 247, 242, .9); font-size: 13px; white-space: nowrap; }
+  #camLoad { position: absolute; left: 50%; top: calc(50% + var(--fh, 60vh) / 2 + 14px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 999px; background: rgba(16, 25, 34, .72); color: rgba(247, 247, 242, .9); font-size: 13px; white-space: nowrap; }
   #camLoad[hidden] { display: none; }
   #camLoad i { width: 14px; height: 14px; border: 2px solid rgba(247, 247, 242, .35); border-top-color: #E19FC3; border-radius: 50%; animation: camSpin .8s linear infinite; }
   @keyframes camSpin { to { transform: rotate(360deg); } }
@@ -141,6 +141,12 @@
         .catch(function () { modelP = null; ld.hidden = true; return null; });
       return modelP;
     }
+    function fitFrame() {
+      var vw = video.videoWidth, vh = video.videoHeight, W = cam.clientWidth, H = cam.clientHeight; if (!vw) return;
+      var s = Math.min(W / vw, H / vh), ph = vh * s, pw = vw * s;
+      var fh = Math.min(ph * 0.8, pw * 0.92 * 1.5);
+      cam.style.setProperty('--fh', fh + 'px');
+    }
     function tip(t, sub, ok) {
       var el = document.getElementById('camTip');
       el.querySelector('b').textContent = t; el.querySelector('span').textContent = sub || '';
@@ -149,7 +155,7 @@
     function guide() {
       if (cam.hidden || !stream || !video.videoWidth) { loopT = setTimeout(guide, 300); return; }
       var vw = video.videoWidth, vh = video.videoHeight, W = cam.clientWidth, H = cam.clientHeight;
-      var s = Math.max(W / vw, H / vh), ox = (W - vw * s) / 2, oy = (H - vh * s) / 2, r = frame.getBoundingClientRect();
+      var s = Math.min(W / vw, H / vh), ox = (W - vw * s) / 2, oy = (H - vh * s) / 2, r = frame.getBoundingClientRect();
       // How bright the frame is
       probe.width = 24; probe.height = 36;
       var pc = probe.getContext('2d', { willReadFrequently: true });
@@ -188,11 +194,11 @@
       tip('Fit the cover inside the frame', 'Lay the book flat, in good light');
       loadModel(); clearTimeout(loopT); loopT = setTimeout(guide, 500);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return blocked();
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1080 }, height: { ideal: 1920 }, aspectRatio: { ideal: 9 / 16 } }, audio: false })
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1440 }, height: { ideal: 1920 } }, audio: false })
         .then(function (s) {
           stream = s; video.srcObject = s;
           try { var tr = s.getVideoTracks()[0], caps = tr.getCapabilities ? tr.getCapabilities() : {}; if (caps.zoom) tr.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] }).catch(function () {}); } catch (e) {}
-          return video.play();
+          return video.play().then(function () { fitFrame(); video.onresize = fitFrame; });
         })
         .catch(blocked);
     }
@@ -207,7 +213,7 @@
       if (!stream || !video.videoWidth) return;
       var f = document.getElementById('camFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
       var vw = video.videoWidth, vh = video.videoHeight, W = cam.clientWidth, H = cam.clientHeight;
-      var s = Math.max(W / vw, H / vh), ox = (W - vw * s) / 2, oy = (H - vh * s) / 2, r = frame.getBoundingClientRect();
+      var s = Math.min(W / vw, H / vh), ox = (W - vw * s) / 2, oy = (H - vh * s) / 2, r = frame.getBoundingClientRect();
       var c = document.createElement('canvas'); c.width = 720; c.height = 1080;
       c.getContext('2d').drawImage(video, (r.left - ox) / s, (r.top - oy) / s, r.width / s, r.height / s, 0, 0, 720, 1080);
       var data = c.toDataURL('image/jpeg', 0.86);
