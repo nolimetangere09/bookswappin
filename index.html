@@ -38,6 +38,47 @@
   #load.gone { opacity: 0; pointer-events: none; }
   @keyframes bob { 50% { transform: translateY(-6px) rotate(-6deg); } }
   @media (prefers-reduced-motion: reduce) { #load img { animation: none; } }
+
+  /* Camera for book covers: opened here, because the site's own frame isn't allowed to use the camera */
+  @font-face { font-family: 'Inter'; font-weight: 600; src: url(fonts/inter-latin-600-normal.woff2) format('woff2'); }
+  #cam { position: fixed; inset: 0; z-index: 5; background: #101922; color: #F7F7F2; font: 15px/1.4 Inter, -apple-system, system-ui, sans-serif; overflow: hidden; }
+  #cam[hidden] { display: none; }
+  #cam { animation: camIn .25s ease-out; }
+  @keyframes camIn { from { opacity: 0; } }
+  #cam video { opacity: 0; transition: opacity .35s ease; }
+  #cam.ready video { opacity: 1; }
+  #cam.starting #camFrame, #cam.starting #camTip, #cam.starting #camShot, #cam.starting #camLoad { visibility: hidden; }
+  #camStart { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 14px; color: rgba(247, 247, 242, .85); font-size: 14px; }
+  #camStart i { width: 28px; height: 28px; border: 3px solid rgba(247, 247, 242, .25); border-top-color: #E19FC3; border-radius: 50%; animation: camSpin .8s linear infinite; }
+  #camStart[hidden] { display: none; }
+  #cam video { position: absolute; left: 0; top: 0; width: 100%; object-fit: contain; border-radius: 18px; background: #000; }
+  #camFrame { position: absolute; left: 12vw; top: 20vh; width: 76vw; aspect-ratio: 2 / 3; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(16, 25, 34, .62); border: 2px solid rgba(247, 247, 242, .55); box-sizing: border-box; }
+  /* The pink corners are the same rounded box as the outline, drawn 4px thick and shown only near the corners */
+  #camFrame::after { content: ''; position: absolute; inset: -2px; border-radius: 16px; border: 4px solid #E19FC3; transition: border-color .2s; pointer-events: none;
+    -webkit-mask: linear-gradient(#000, #000) 0 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 0 100% / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 100% / 40px 40px no-repeat;
+    mask: linear-gradient(#000, #000) 0 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 0 / 40px 40px no-repeat, linear-gradient(#000, #000) 0 100% / 40px 40px no-repeat, linear-gradient(#000, #000) 100% 100% / 40px 40px no-repeat; }
+  #camFrame.ok { border-color: rgba(62, 122, 91, .8); }
+  #camFrame.ok::after { border-color: #3E7A5B; }
+  #camTip b { transition: color .2s; }
+  #camTip.ok b { color: #9ED3B1; }
+  #camTip { position: absolute; left: 0; right: 0; top: max(22px, env(safe-area-inset-top)); padding: 0 24px; text-align: center; }
+  #camTip b { display: block; font-size: 18px; font-weight: 600; }
+  #camTip span { display: block; margin-top: 4px; color: rgba(247, 247, 242, .75); font-size: 14px; }
+  #camBar { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 24px max(26px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 76px 1fr; align-items: center; justify-items: center; }
+  #camBar button, #camBar label { border: 0; background: none; color: #F7F7F2; font: inherit; font-weight: 600; cursor: pointer; padding: 10px 6px; display: inline-flex; align-items: center; gap: 7px; }
+  #camBar svg { width: 20px; height: 20px; }
+  #camBar input { display: none; }
+  #camShot { width: 76px; height: 76px; border-radius: 50%; padding: 0 !important; background: none; border: 4px solid #F7F7F2 !important; display: grid !important; place-items: center; }
+  #camShot::after { content: ''; width: 60px; height: 60px; border-radius: 50%; background: #F7F7F2; transition: transform .15s; }
+  #camShot:active::after { transform: scale(.88); }
+  #camFlash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  #camFlash.go { animation: camFlash .35s ease-out; }
+  @keyframes camFlash { 0% { opacity: .85; } 100% { opacity: 0; } }
+  #camLoad { position: absolute; left: 50%; top: 70vh; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 999px; background: rgba(16, 25, 34, .72); color: rgba(247, 247, 242, .9); font-size: 13px; white-space: nowrap; }
+  #camLoad[hidden] { display: none; }
+  #camLoad i { width: 14px; height: 14px; border: 2px solid rgba(247, 247, 242, .35); border-top-color: #E19FC3; border-radius: 50%; animation: camSpin .8s linear infinite; }
+  @keyframes camSpin { to { transform: rotate(360deg); } }
+  #camMsg { position: absolute; left: 24px; right: 24px; top: 46%; transform: translateY(-50%); text-align: center; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -48,6 +89,16 @@
 </noscript>
 <div id="load" aria-hidden="true"><img src="favicon.svg" alt="" width="64" height="64"><span>Loading the shelf…</span></div>
 <iframe id="app" title="Bookswappin’ BCN" allow="clipboard-write; web-share; camera"></iframe>
+<div id="cam" hidden role="dialog" aria-label="Take a photo of the cover">
+  <video id="camVideo" playsinline muted autoplay></video>
+  <div id="camStart" hidden><i></i>Opening the camera…</div>
+  <div id="camFrame" aria-hidden="true"></div>
+  <div id="camTip"><b>Fit the cover inside the frame</b><span>Lay the book flat, in good light</span></div>
+  <div id="camLoad" hidden><i></i>Getting the smart guide ready…</div>
+  <p id="camMsg" hidden></p>
+  <div id="camFlash"></div>
+  <div id="camBar"><button type="button" id="camCancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Cancel</button><button type="button" id="camShot" aria-label="Take the photo"></button><label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Gallery<input type="file" id="camFile" accept="image/*"></label></div>
+</div>
 <script>
   // Tells the site which website sent the visitor and if it was opened as a home screen app (for the admin stats)
   var q = new URLSearchParams(location.search);
@@ -77,6 +128,156 @@
       if (d.bsw === 'get' && e.source) e.source.postMessage({ bsw: 'me', me: localStorage.getItem('bsw_me') }, e.origin);
     } catch (err) {}
   });
+
+  // Cover photos: the site asks for the camera here, sees a book-shaped frame, and gets back just the cover
+  (function () {
+    var cam = document.getElementById('cam'), video = document.getElementById('camVideo'), frame = document.getElementById('camFrame');
+    var stream = null, asker = null, askerOrigin = '';
+    function reply(d) { try { if (asker) asker.postMessage(Object.assign({ bsw: 'photo' }, d), askerOrigin); } catch (e) {} }
+    function close() { document.getElementById('camLoad').hidden = true; if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; video.srcObject = null; cam.hidden = true; clearTimeout(loopT); }
+    // Live guidance: a small AI model that recognises books runs on the phone and compares the book to the frame.
+    // It only gives advice: the shutter always works.
+    var model = null, modelP = null, loopT = 0, probe = document.createElement('canvas');
+    function addScript(src) { return new Promise(function (ok, no) { var el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = no; document.head.appendChild(el); }); }
+    function loadModel() {
+      var ld = document.getElementById('camLoad');
+      if (!model && !modelP) ld.hidden = false;
+      if (!modelP) modelP = addScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js')
+        .then(function () { return addScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js'); })
+        .then(function () { return window.cocoSsd.load({ base: 'lite_mobilenet_v2' }); })
+        .then(function (m) { model = m; ld.hidden = true; return m; })
+        .catch(function () { modelP = null; ld.hidden = true; return null; });
+      return modelP;
+    }
+    function tip(t, sub, ok) {
+      var el = document.getElementById('camTip');
+      el.querySelector('b').textContent = t; el.querySelector('span').textContent = sub || '';
+      el.classList.toggle('ok', !!ok); frame.classList.toggle('ok', !!ok);
+    }
+    // The picture is shown whole (never cropped), as a rounded box above the buttons, like a story camera
+    var box = { left: 0, top: 0, w: 0, h: 0 };
+    function layout() {
+      var vw = video.videoWidth, vh = video.videoHeight; if (!vw || !vh) return;
+      // Edge to edge like a story camera, ending a little above the buttons (a sliver may be trimmed top and bottom)
+      var W = cam.clientWidth, H = cam.clientHeight, avail = H - document.getElementById('camBar').offsetHeight - 16;
+      var bw = W, bh = W * vh / vw, dh = Math.min(bh, avail), top = (avail - dh) / 2;
+      box = { left: 0, top: top - (bh - dh) / 2, w: bw, h: bh };
+      video.style.cssText = 'left:0;top:' + top + 'px;width:' + bw + 'px;height:' + dh + 'px;object-fit:cover';
+      var room = dh, fw = Math.min(bw * .76, room * .66 / 1.5), fh = fw * 1.5;
+      frame.style.cssText = 'left:' + ((bw - fw) / 2) + 'px;top:' + (top + (room - fh) / 2) + 'px;width:' + fw + 'px;height:' + fh + 'px';
+      document.getElementById('camTip').style.top = (top + 22) + 'px';
+      document.getElementById('camLoad').style.top = (top + (room + fh) / 2 + 14) + 'px';
+    }
+    video.addEventListener('loadedmetadata', layout); window.addEventListener('resize', layout);
+    function guide() {
+      if (cam.hidden || !stream || !video.videoWidth) { loopT = setTimeout(guide, 300); return; }
+      var vw = video.videoWidth, vh = video.videoHeight;
+      var s = box.w / vw, ox = box.left, oy = box.top, r = frame.getBoundingClientRect();
+      // How bright the frame is
+      probe.width = 24; probe.height = 36;
+      var pc = probe.getContext('2d', { willReadFrequently: true });
+      pc.drawImage(video, (r.left - ox) / s, (r.top - oy) / s, r.width / s, r.height / s, 0, 0, 24, 36);
+      var px = pc.getImageData(0, 0, 24, 36).data, lum = 0;
+      for (var i = 0; i < px.length; i += 4) lum += px[i] * .299 + px[i + 1] * .587 + px[i + 2] * .114;
+      lum /= px.length / 4;
+      if (lum < 45) { tip('Too dark', 'Find a bit more light'); loopT = setTimeout(guide, 400); return; }
+      if (!model) { tip('Fit the cover inside the frame', 'Lay the book flat, in good light'); loopT = setTimeout(guide, 400); return; }
+      model.detect(video, 5, 0.3).then(function (list) {
+        if (cam.hidden) return;
+        var fx = r.left, fy = r.top, fw = r.width, fh = r.height, best = null, bestIn = 0;
+        list.forEach(function (p) {
+          if (p.class !== 'book') return;
+          var x = p.bbox[0] * s + ox, y = p.bbox[1] * s + oy, w = p.bbox[2] * s, h = p.bbox[3] * s;
+          var ix = Math.max(0, Math.min(x + w, fx + fw) - Math.max(x, fx)), iy = Math.max(0, Math.min(y + h, fy + fh) - Math.max(y, fy));
+          if (ix * iy > bestIn) { bestIn = ix * iy; best = { x: x, y: y, w: w, h: h }; }
+        });
+        if (!best) tip('Fit the cover inside the frame', 'Lay the book flat, in good light');
+        else {
+          var fill = bestIn / (fw * fh), big = (best.w * best.h) / (fw * fh);
+          var dx = Math.abs(best.x + best.w / 2 - (fx + fw / 2)) / fw, dy = Math.abs(best.y + best.h / 2 - (fy + fh / 2)) / fh;
+          if (big > 1.7) tip('Move back a little', 'The whole cover should fit in the frame');
+          else if (fill < 0.5 && dx < 0.2 && dy < 0.2) tip('Move closer', 'Fill the frame with the cover');
+          else if (dx > 0.15 || dy > 0.15) tip('Centre the book', 'Line the cover up with the frame');
+          else if (fill < 0.62) tip('A little closer', 'Almost there');
+          else tip('Looks good!', 'Take the photo', true);
+        }
+        loopT = setTimeout(guide, 250);
+      }).catch(function () { loopT = setTimeout(guide, 600); });
+    }
+    function open(src, origin) {
+      asker = src; askerOrigin = origin;
+      document.getElementById('camMsg').hidden = true; frame.hidden = false; document.getElementById('camShot').disabled = false;
+      cam.hidden = false; cam.classList.add('starting'); cam.classList.remove('ready'); document.getElementById('camStart').hidden = false;
+      tip('Fit the cover inside the frame', 'Lay the book flat, in good light');
+      loadModel(); clearTimeout(loopT); loopT = setTimeout(guide, 500);
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return blocked();
+      // Phones answer the same request differently: some give an upright picture, some a sideways one.
+      // Try a few ways of asking, keep the first that gives an upright picture, and remember it for next time.
+      var tries = [
+        { width: { ideal: 1920 }, height: { ideal: 1080 } },
+        { width: { ideal: 1080 }, height: { ideal: 1920 } },
+        { width: { ideal: 1920 }, height: { ideal: 1440 } },
+        { width: { ideal: 1440 }, height: { ideal: 1920 } },
+        {}
+      ], start = 0, best = null;
+      try { start = Math.min(tries.length - 1, parseInt(localStorage.getItem('bswCam') || '0', 10) || 0); } catch (e) {}
+      function stopAll(s) { s.getTracks().forEach(function (t) { t.stop(); }); }
+      function attempt(i) {
+        if (i >= tries.length) { i = best ? best.i : 0; }
+        var c = Object.assign({ facingMode: { ideal: 'environment' } }, tries[i]);
+        return navigator.mediaDevices.getUserMedia({ video: c, audio: false }).then(function (s) {
+          if (cam.hidden) { stopAll(s); return; }
+          stream = s; video.srcObject = s;
+          return new Promise(function (ok) { video.onloadedmetadata = function () { ok(); }; setTimeout(ok, 1500); }).then(function () {
+            var vw = video.videoWidth || 1, vh = video.videoHeight || 1, done = vh > vw || (best && best.i === i);
+            if (!done && (!best || vh / vw > best.r)) best = { i: i, r: vh / vw };
+            if (!done) { stopAll(s); stream = null; return attempt(i + 1); }
+            try { localStorage.setItem('bswCam', String(i)); } catch (e) {}
+            try { var tr = s.getVideoTracks()[0], caps = tr.getCapabilities ? tr.getCapabilities() : {}; if (caps.zoom) tr.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] }).catch(function () {}); } catch (e) {}
+            layout();
+            return video.play().then(function () { cam.classList.remove('starting'); cam.classList.add('ready'); document.getElementById('camStart').hidden = true; });
+          });
+        });
+      }
+      attempt(start).catch(blocked);
+    }
+    function blocked() {
+      cam.classList.remove('starting'); document.getElementById('camStart').hidden = true;
+      var m = document.getElementById('camMsg');
+      m.textContent = 'The camera is blocked. Allow it for bookswappin.com in your browser settings, or pick a photo from your gallery.';
+      m.hidden = false; frame.hidden = true; document.getElementById('camShot').disabled = true; tip('Camera blocked', '');
+    }
+    document.getElementById('camCancel').onclick = function () { close(); reply({ cancel: true }); };
+    // Takes just what's inside the frame
+    document.getElementById('camShot').onclick = function () {
+      if (!stream || !video.videoWidth) return;
+      var f = document.getElementById('camFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+      var vw = video.videoWidth, s = box.w / vw, ox = box.left, oy = box.top, r = frame.getBoundingClientRect();
+      var c = document.createElement('canvas'); c.width = 720; c.height = 1080;
+      c.getContext('2d').drawImage(video, (r.left - ox) / s, (r.top - oy) / s, r.width / s, r.height / s, 0, 0, 720, 1080);
+      var data = c.toDataURL('image/jpeg', 0.86);
+      setTimeout(function () { close(); reply({ data: data }); }, 180);
+    };
+    // A photo from the gallery goes back whole, so the site can crop it
+    document.getElementById('camFile').onchange = function (e) {
+      var file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        close(); reply({ data: c.toDataURL('image/jpeg', 0.88), raw: true });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); close(); reply({ error: 'file' }); };
+      img.src = url;
+    };
+    window.addEventListener('message', function (e) {
+      if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(e.origin)) return;
+      var d = e.data || {};
+      if (d.bsw === 'hello' && e.source) e.source.postMessage({ bsw: 'hi', cam: true }, e.origin);
+      if (d.bsw === 'camera' && e.source) open(e.source, e.origin);
+    });
+  })();
 </script>
 </body>
 </html>
