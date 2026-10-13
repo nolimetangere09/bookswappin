@@ -188,7 +188,7 @@
       tip('Fit the cover inside the frame', 'Lay the book flat, in good light');
       loadModel(); clearTimeout(loopT); loopT = setTimeout(guide, 500);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return blocked();
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1080 }, height: { ideal: 1440 }, aspectRatio: { ideal: 3 / 4 } }, audio: false })
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1080 }, height: { ideal: 1920 }, aspectRatio: { ideal: 9 / 16 } }, audio: false })
         .then(function (s) {
           stream = s; video.srcObject = s;
           try { var tr = s.getVideoTracks()[0], caps = tr.getCapabilities ? tr.getCapabilities() : {}; if (caps.zoom) tr.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] }).catch(function () {}); } catch (e) {}
