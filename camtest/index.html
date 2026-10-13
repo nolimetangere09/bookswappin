@@ -44,6 +44,14 @@
   @font-face { font-family: 'Inter'; font-weight: 600; src: url(../fonts/inter-latin-600-normal.woff2) format('woff2'); }
   #cam { position: fixed; inset: 0; z-index: 5; background: #101922; color: #F7F7F2; font: 15px/1.4 Inter, -apple-system, system-ui, sans-serif; overflow: hidden; }
   #cam[hidden] { display: none; }
+  #cam { animation: camIn .25s ease-out; }
+  @keyframes camIn { from { opacity: 0; } }
+  #cam video { opacity: 0; transition: opacity .35s ease; }
+  #cam.ready video { opacity: 1; }
+  #cam.starting #camFrame, #cam.starting #camTip, #cam.starting #camShot, #cam.starting #camLoad { visibility: hidden; }
+  #camStart { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 14px; color: rgba(247, 247, 242, .85); font-size: 14px; }
+  #camStart i { width: 28px; height: 28px; border: 3px solid rgba(247, 247, 242, .25); border-top-color: #E19FC3; border-radius: 50%; animation: camSpin .8s linear infinite; }
+  #camStart[hidden] { display: none; }
   #cam video { position: absolute; left: 0; top: 0; width: 100%; object-fit: contain; border-radius: 18px; background: #000; }
   #camFrame { position: absolute; left: 12vw; top: 20vh; width: 76vw; aspect-ratio: 2 / 3; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(16, 25, 34, .62); border: 2px solid rgba(247, 247, 242, .55); box-sizing: border-box; }
   /* The pink corners are the same rounded box as the outline, drawn 4px thick and shown only near the corners */
@@ -84,6 +92,7 @@
 <iframe id="app" title="Bookswappin’ BCN" allow="clipboard-write; web-share; camera"></iframe>
 <div id="cam" hidden role="dialog" aria-label="Take a photo of the cover">
   <video id="camVideo" playsinline muted autoplay></video>
+  <div id="camStart" hidden><i></i>Opening the camera…</div>
   <div id="camFrame" aria-hidden="true"></div>
   <div id="camTip"><b>Fit the cover inside the frame</b><span>Lay the book flat, in good light</span></div>
   <div id="camLoad" hidden><i></i>Getting the smart guide ready…</div>
@@ -198,7 +207,7 @@
     function open(src, origin) {
       asker = src; askerOrigin = origin;
       document.getElementById('camMsg').hidden = true; frame.hidden = false; document.getElementById('camShot').disabled = false;
-      cam.hidden = false;
+      cam.hidden = false; cam.classList.add('starting'); cam.classList.remove('ready'); document.getElementById('camStart').hidden = false;
       tip('Fit the cover inside the frame', 'Lay the book flat, in good light');
       loadModel(); clearTimeout(loopT); loopT = setTimeout(guide, 500);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return blocked();
@@ -226,13 +235,14 @@
             try { localStorage.setItem('bswCam', String(i)); } catch (e) {}
             try { var tr = s.getVideoTracks()[0], caps = tr.getCapabilities ? tr.getCapabilities() : {}; if (caps.zoom) tr.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] }).catch(function () {}); } catch (e) {}
             layout();
-            return video.play();
+            return video.play().then(function () { cam.classList.remove('starting'); cam.classList.add('ready'); document.getElementById('camStart').hidden = true; });
           });
         });
       }
       attempt(start).catch(blocked);
     }
     function blocked() {
+      cam.classList.remove('starting'); document.getElementById('camStart').hidden = true;
       var m = document.getElementById('camMsg');
       m.textContent = 'The camera is blocked. Allow it for bookswappin.com in your browser settings, or pick a photo from your gallery.';
       m.hidden = false; frame.hidden = true; document.getElementById('camShot').disabled = true; tip('Camera blocked', '');
