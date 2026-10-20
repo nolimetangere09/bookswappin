@@ -78,6 +78,7 @@
   #camLoad[hidden] { display: none; }
   #camLoad i { width: 14px; height: 14px; border: 2px solid rgba(247, 247, 242, .35); border-top-color: #E19FC3; border-radius: 50%; animation: camSpin .8s linear infinite; }
   @keyframes camSpin { to { transform: rotate(360deg); } }
+  #cam.qr #camShot { visibility: hidden; }
   #camMsg { position: absolute; left: 24px; right: 24px; top: 46%; transform: translateY(-50%); text-align: center; font-size: 16px; }
 </style>
 </head>
@@ -137,7 +138,7 @@
     function close() { document.getElementById('camLoad').hidden = true; if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; video.srcObject = null; cam.hidden = true; clearTimeout(loopT); }
     // Live guidance: a small AI model that recognises books runs on the phone and compares the book to the frame.
     // It only gives advice: the shutter always works.
-    var model = null, modelP = null, loopT = 0, probe = document.createElement('canvas');
+    var model = null, modelP = null, loopT = 0, probe = document.createElement('canvas'), qrMode = false;
     function addScript(src) { return new Promise(function (ok, no) { var el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = no; document.head.appendChild(el); }); }
     function loadModel() {
       var ld = document.getElementById('camLoad');
@@ -163,7 +164,7 @@
       var bw = W, bh = W * vh / vw, dh = Math.min(bh, avail), top = (avail - dh) / 2;
       box = { left: 0, top: top - (bh - dh) / 2, w: bw, h: bh };
       video.style.cssText = 'left:0;top:' + top + 'px;width:' + bw + 'px;height:' + dh + 'px;object-fit:cover';
-      var room = dh, fw = Math.min(bw * .76, room * .66 / 1.5), fh = fw * 1.5;
+      var room = dh, fw = qrMode ? Math.min(bw * .7, room * .6) : Math.min(bw * .76, room * .66 / 1.5), fh = qrMode ? fw : fw * 1.5;
       frame.style.cssText = 'left:' + ((bw - fw) / 2) + 'px;top:' + (top + (room - fh) / 2) + 'px;width:' + fw + 'px;height:' + fh + 'px';
       document.getElementById('camTip').style.top = (top + 22) + 'px';
       document.getElementById('camLoad').style.top = (top + (room + fh) / 2 + 14) + 'px';
@@ -204,12 +205,43 @@
         loopT = setTimeout(guide, 250);
       }).catch(function () { loopT = setTimeout(guide, 600); });
     }
-    function open(src, origin) {
-      asker = src; askerOrigin = origin;
+    // QR check-in: reads the code from the live picture and closes on its own once it's a Bookswappin' one
+    var qrDet = null, qrLib = null, qrCan = document.createElement('canvas');
+    function qrReader() {
+      if (qrDet || qrLib) return Promise.resolve();
+      if ('BarcodeDetector' in window) {
+        return BarcodeDetector.getSupportedFormats().then(function (f) { if (f.indexOf('qr_code') !== -1) qrDet = new BarcodeDetector({ formats: ['qr_code'] }); }).catch(function () {})
+          .then(function () { if (!qrDet) return addScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js').then(function () { qrLib = window.jsQR; }); });
+      }
+      return addScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js').then(function () { qrLib = window.jsQR; });
+    }
+    function qrLoop() {
+      if (cam.hidden || !qrMode) return;
+      if (!stream || !video.videoWidth || (!qrDet && !qrLib)) { loopT = setTimeout(qrLoop, 250); return; }
+      var s = box.w / video.videoWidth, r = frame.getBoundingClientRect(), pad = r.width * .15;
+      qrCan.width = 520; qrCan.height = 520;
+      var cx = qrCan.getContext('2d', { willReadFrequently: true });
+      cx.drawImage(video, (r.left - pad - box.left) / s, (r.top - pad - box.top) / s, (r.width + pad * 2) / s, (r.height + pad * 2) / s, 0, 0, 520, 520);
+      var p = qrDet ? qrDet.detect(qrCan).then(function (l) { return l && l[0] ? l[0].rawValue : ''; })
+        : Promise.resolve((function () { var c = qrLib(cx.getImageData(0, 0, 520, 520).data, 520, 520, { inversionAttempts: 'dontInvert' }); return c ? c.data : ''; })());
+      p.then(function (t) {
+        if (cam.hidden || !qrMode) return;
+        if (t && /[a-z0-9._]{3,20}\.[0-9a-f]{12}/i.test(t)) {
+          tip('Got it!', '', true);
+          setTimeout(function () { close(); reply({ qr: t }); }, 350);
+          return;
+        }
+        if (t) tip('That’s not a Bookswappin’ QR', 'Ask them to open My QR code in the app');
+        loopT = setTimeout(qrLoop, 180);
+      }).catch(function () { loopT = setTimeout(qrLoop, 400); });
+    }
+    function open(src, origin, mode) {
+      asker = src; askerOrigin = origin; qrMode = mode === 'qr'; cam.classList.toggle('qr', qrMode);
       document.getElementById('camMsg').hidden = true; frame.hidden = false; document.getElementById('camShot').disabled = false;
       cam.hidden = false; cam.classList.add('starting'); cam.classList.remove('ready'); document.getElementById('camStart').hidden = false;
-      tip('Fit the cover inside the frame', 'Lay the book flat, in good light');
-      loadModel(); clearTimeout(loopT); loopT = setTimeout(guide, 500);
+      clearTimeout(loopT);
+      if (qrMode) { tip('Point at their QR code', 'It checks them in on its own'); qrReader(); loopT = setTimeout(qrLoop, 400); }
+      else { tip('Fit the cover inside the frame', 'Lay the book flat, in good light'); loadModel(); loopT = setTimeout(guide, 500); }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return blocked();
       // Phones answer the same request differently: some give an upright picture, some a sideways one.
       // Try a few ways of asking, keep the first that gives an upright picture, and remember it for next time.
@@ -275,7 +307,7 @@
       if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(e.origin)) return;
       var d = e.data || {};
       if (d.bsw === 'hello' && e.source) e.source.postMessage({ bsw: 'hi', cam: true }, e.origin);
-      if (d.bsw === 'camera' && e.source) open(e.source, e.origin);
+      if (d.bsw === 'camera' && e.source) open(e.source, e.origin, d.mode);
     });
   })();
 </script>
